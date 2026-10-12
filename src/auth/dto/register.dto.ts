@@ -5,13 +5,15 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
-  name: string;
+  name!: string;
 
-  @Transform(({ value }) => value?.toLowerCase().trim())
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.toLowerCase().trim() : value,
+  )
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 }
