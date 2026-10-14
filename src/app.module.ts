@@ -5,6 +5,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { validateEnv } from './config/env.validation';
+import { BlogModule } from './blog/blog.module';
 
 @Module({
   controllers: [AppController],
@@ -13,6 +14,7 @@ import { validateEnv } from './config/env.validation';
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     UsersModule,
     AuthModule,
+    BlogModule,
   ],
 })
 export class AppModule {}

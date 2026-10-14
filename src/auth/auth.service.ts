@@ -8,7 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
 import { Role } from '../common/enums/role.enum';
-import { LoginDto } from './dto/dto/login.dto';
+import { LoginDto } from './dto/login.dto';
 import { User } from '../users/entities/user.entity';
 import { JwtPayload } from './strategies/jwt.strategy';
 

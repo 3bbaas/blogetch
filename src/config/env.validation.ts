@@ -1,4 +1,4 @@
-function asOptionalString(value: unknown): string | undefined {
+function validaString(value: unknown): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
@@ -11,14 +11,14 @@ export function validateEnv(
   }
   const result: Record<string, string> = {
     JWT_SECRET: jwtSecret,
-    JWT_EXPIRES_IN: asOptionalString(config['JWT_EXPIRES_IN']) ?? '1d',
-    PORT: asOptionalString(config['PORT']) ?? '3000',
+    JWT_EXPIRES_IN: validaString(config['JWT_EXPIRES_IN']) ?? '1d',
+    PORT: validaString(config['PORT']) ?? '3000',
   };
-  const adminEmail = asOptionalString(config['ADMIN_EMAIL']);
+  const adminEmail = validaString(config['ADMIN_EMAIL']);
   if (adminEmail !== undefined) {
     result['ADMIN_EMAIL'] = adminEmail;
   }
-  const adminPassword = asOptionalString(config['ADMIN_PASSWORD']);
+  const adminPassword = validaString(config['ADMIN_PASSWORD']);
   if (adminPassword !== undefined) {
     result['ADMIN_PASSWORD'] = adminPassword;
   }

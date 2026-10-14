@@ -25,9 +25,6 @@ export class UsersService implements OnModuleInit {
     if (this.findByEmail(normalized) !== undefined) {
       return;
     }
-    // Seed synchronously with a pre-hashed value is not possible with bcrypt's
-    // async API; hash with the sync API here since this hook is synchronous
-    // and runs once at startup.
     const passwordHash = bcrypt.hashSync(password, 10);
     this.create({
       name: 'Admin',
@@ -55,5 +52,8 @@ export class UsersService implements OnModuleInit {
 
   findById(id: number): User | undefined {
     return this.users.find((u) => u.id === id);
+  }
+  findByIds(ids: number[]): User[] {
+    return this.users.filter((u) => ids.includes(u.id));
   }
 }
