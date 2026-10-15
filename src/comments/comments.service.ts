@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { BlogService } from '../blog/blog.service';
 import { UsersService } from '../users/users.service';
 import { Comment, CommentResponse } from './entities/comment.entity';
-import { createCommentDto } from './dto/create-comment.dto';
+import { CreateCommentDto } from './dto/create-comment.dto';
 
 @Injectable()
 export class CommentsService {
@@ -13,11 +13,11 @@ export class CommentsService {
     private readonly usersService: UsersService,
   ) {}
 
-  async create(
-    dto: createCommentDto,
+  create(
+    dto: CreateCommentDto,
     blogId: number,
     userId: number,
-  ): Promise<CommentResponse> {
+  ): CommentResponse {
     this.blogService.findOne(blogId);
     const comment: Comment = {
       id: this.nextId++,
@@ -33,7 +33,7 @@ export class CommentsService {
       author: user ? { id: userId, name: user.name } : null,
     };
   }
-  async findByBlog(blogId: number): Promise<CommentResponse[]> {
+  findByBlog(blogId: number): CommentResponse[] {
     this.blogService.findOne(blogId);
     const list = this.comments
       .filter((c) => c.blogId === blogId)

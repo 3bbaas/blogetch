@@ -9,7 +9,8 @@ import {
 } from '@nestjs/common';
 import { CommentsService } from './comments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { createCommentDto } from './dto/create-comment.dto';
+import { Public } from '../common/decorators/public.decorator';
+import { CreateCommentDto } from './dto/create-comment.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../common/types/authenticated-request';
 import { CommentResponse } from './entities/comment.entity';
@@ -22,15 +23,14 @@ export class CommentsController {
   @UseGuards(JwtAuthGuard)
   create(
     @Param('blogId', ParseIntPipe) blogId: number,
-    @Body() dto: createCommentDto,
+    @Body() dto: CreateCommentDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<CommentResponse> {
+  ): CommentResponse {
     return this.commentsService.create(dto, blogId, user.id);
   }
+  @Public()
   @Get()
-  findByBlog(
-    @Param('blogId', ParseIntPipe) blogId: number,
-  ): Promise<CommentResponse[]> {
+  findByBlog(@Param('blogId', ParseIntPipe) blogId: number): CommentResponse[] {
     return this.commentsService.findByBlog(blogId);
   }
 }
