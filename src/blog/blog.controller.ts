@@ -12,6 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { AuthenticatedUser } from '../common/types/authenticated-request';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateBlogDto } from './dto/create-blog.dto';
@@ -20,7 +21,7 @@ import { QueryBlogsDto } from './dto/query-blogs.dto';
 import { BlogService, PaginatedBlogs } from './blog.service';
 import { UpdateBlogDto } from './dto/update-blog.dto';
 
-@Controller('blog')
+@Controller('blogs')
 export class BlogController {
   constructor(private readonly blogsService: BlogService) {}
 
@@ -33,11 +34,13 @@ export class BlogController {
     return this.blogsService.create(dto, user.id);
   }
 
+  @Public()
   @Get()
   findAll(@Query() query: QueryBlogsDto): PaginatedBlogs {
     return this.blogsService.findAll(query);
   }
 
+  @Public()
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number): BlogResponse {
     return this.blogsService.findOne(id);

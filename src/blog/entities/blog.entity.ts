@@ -1,8 +1,10 @@
+import { BlogCategory } from '../enums/blog-category.enum';
+
 export class Blog {
   id!: number;
   title!: string;
   content!: string;
-  category!: string;
+  category!: BlogCategory;
   authorId!: number;
   createdAt!: Date;
   updatedAt!: Date;

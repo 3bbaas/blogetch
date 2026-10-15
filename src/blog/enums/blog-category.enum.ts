@@ -1,7 +1,7 @@
 export enum BlogCategory {
-  TECH = 'tech',
-  LIFESTYLE = 'lifestyle',
-  EDUCATION = 'education',
-  BUSINESS = 'business',
-  OTHER = 'other',
+  TECHNOLOGY = 'Technology',
+  LIFESTYLE = 'Lifestyle',
+  EDUCATION = 'Education',
+  BUSINESS = 'Business',
+  OTHER = 'Other',
 }

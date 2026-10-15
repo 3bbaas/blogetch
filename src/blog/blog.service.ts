@@ -49,11 +49,20 @@ export class BlogService {
     const names = new Map(authors.map((u) => [u.id, u.name]));
 
     const term = search?.trim().toLowerCase();
+    const toEndOfDay =
+      to === undefined
+        ? undefined
+        : (() => {
+            const end = new Date(to);
+            end.setUTCHours(23, 59, 59, 999);
+            return end;
+          })();
 
     const filtered = this.blogs
       .filter((b) => !category || b.category === category)
       .filter((b) => author === undefined || b.authorId === author)
       .filter((b) => !from || b.createdAt >= from)
+      .filter((b) => toEndOfDay === undefined || b.createdAt <= toEndOfDay)
       .filter((b) => {
         if (!term) return true;
         const authorName = (names.get(b.authorId) ?? '').toLowerCase();
