@@ -30,19 +30,19 @@ export class BlogController {
   create(
     @Body() dto: CreateBlogDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): BlogResponse {
+  ): Promise<BlogResponse> {
     return this.blogsService.create(dto, user.id);
   }
 
   @Public()
   @Get()
-  findAll(@Query() query: QueryBlogsDto): PaginatedBlogs {
+  findAll(@Query() query: QueryBlogsDto): Promise<PaginatedBlogs> {
     return this.blogsService.findAll(query);
   }
 
   @Public()
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number): BlogResponse {
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<BlogResponse> {
     return this.blogsService.findOne(id);
   }
 
@@ -52,7 +52,7 @@ export class BlogController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateBlogDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): BlogResponse {
+  ): Promise<BlogResponse> {
     return this.blogsService.update(id, dto, user);
   }
 
@@ -62,7 +62,7 @@ export class BlogController {
   remove(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: AuthenticatedUser,
-  ): void {
+  ): Promise<void> {
     return this.blogsService.remove(id, user);
   }
 }

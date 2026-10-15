@@ -1,0 +1,55 @@
+// Prisma v7 schema. The connection URL lives in prisma7.config.ts
+// (datasource.url), not here. Run `pnpm prisma migrate dev` to apply.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// NOTE: role is stored as a plain String holding the app-level Role enum
+// values ('admin' | 'author'). This keeps response shapes byte-identical
+// with the in-memory version without a mapping layer. The CHECK-style
+// guarantee lives in the DTO/service layer (register always assigns
+// Role.AUTHOR; roles come from the signed JWT, never from user input).
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         String    @default("author")
+  createdAt    DateTime  @default(now())
+  blogs        Blog[]
+  comments     Comment[]
+}
+
+model Blog {
+  id        Int       @id @default(autoincrement())
+  title     String
+  content   String
+  category  String
+  authorId  Int
+  author    User      @relation(fields: [authorId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  comments  Comment[]
+
+  @@index([authorId])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  blogId    Int
+  blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([blogId])
+}

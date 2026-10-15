@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/configure-app';
+import { truncateAll } from './db-helpers';
 
 interface ResponseWithBody {
   body: unknown;
@@ -68,14 +69,18 @@ describe('Comments (e2e)', () => {
 
   beforeAll(async () => {
     process.env['JWT_SECRET'] ??= 'test-secret-that-is-long-enough';
-    process.env['ADMIN_EMAIL'] ??= 'admin@inkwell.dev';
-    process.env['ADMIN_PASSWORD'] ??= 'Admin12345';
+    // Direct assignment (not ??=): the auth suite deletes these vars in the
+    // same worker process, and the admin seed is required here.
+    process.env['ADMIN_EMAIL'] = 'admin@inkwell.dev';
+    process.env['ADMIN_PASSWORD'] = 'Admin12345';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     configureApp(app);
+    // Truncate before init: the admin seed runs on init.
+    await truncateAll(app);
     await app.init();
 
     const adminLogin = await request(app.getHttpServer())

@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: blogetch-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: blogetch
+      POSTGRES_PASSWORD: blogetch
+      POSTGRES_DB: blogetch
+    ports:
+      - '5435:5432'
+    volumes:
+      - blogetch-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U blogetch -d blogetch']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  db-test:
+    image: postgres:16-alpine
+    container_name: blogetch-db-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: blogetch
+      POSTGRES_PASSWORD: blogetch
+      POSTGRES_DB: blogetch_test
+    ports:
+      - '5434:5432'
+    volumes:
+      - blogetch-test-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U blogetch -d blogetch_test']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  blogetch-data:
+  blogetch-test-data:

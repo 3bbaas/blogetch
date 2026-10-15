@@ -3,57 +3,81 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { Role } from '../common/enums/role.enum';
 import { User } from './entities/user.entity';
+import { PrismaService } from '../prisma/prisma.service';
 
 function normalizeEmail(email: string): string {
   return email.toLowerCase().trim();
 }
 
+function parseRole(value: string): Role {
+  if ((Object.values(Role) as string[]).includes(value)) {
+    return value as Role;
+  }
+  throw new Error(`Unknown role in database: ${value}`);
+}
+
+export interface CreateUserData {
+  name: string;
+  email: string;
+  passwordHash: string;
+  role: Role;
+}
+
 @Injectable()
 export class UsersService implements OnModuleInit {
-  private users: User[] = [];
-  private nextId = 1;
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
-  constructor(private readonly configService: ConfigService) {}
-
-  onModuleInit(): void {
+  async onModuleInit(): Promise<void> {
     const email = this.configService.get<string>('ADMIN_EMAIL');
     const password = this.configService.get<string>('ADMIN_PASSWORD');
     if (email === undefined || password === undefined) {
       return;
     }
     const normalized = normalizeEmail(email);
-    if (this.findByEmail(normalized) !== undefined) {
-      return;
-    }
-    const passwordHash = bcrypt.hashSync(password, 10);
-    this.create({
-      name: 'Admin',
-      email: normalized,
-      passwordHash,
-      role: Role.ADMIN,
+    const passwordHash = await bcrypt.hash(password, 10);
+    await this.prisma.user.upsert({
+      where: { email: normalized },
+      update: {},
+      create: {
+        name: 'Admin',
+        email: normalized,
+        passwordHash,
+        role: Role.ADMIN,
+      },
     });
   }
 
-  create(data: Omit<User, 'createdAt' | 'id'>): User {
-    const user: User = {
-      id: this.nextId++,
-      createdAt: new Date(),
-      ...data,
-      email: normalizeEmail(data.email),
-    };
-    this.users.push(user);
-    return user;
+  async create(data: CreateUserData): Promise<User> {
+    const row = await this.prisma.user.create({
+      data: {
+        name: data.name,
+        email: normalizeEmail(data.email),
+        passwordHash: data.passwordHash,
+        role: data.role,
+      },
+    });
+    return { ...row, role: parseRole(row.role) };
   }
 
-  findByEmail(email: string): User | undefined {
-    const normalized = normalizeEmail(email);
-    return this.users.find((user) => user.email === normalized);
+  async findByEmail(email: string): Promise<User | null> {
+    const row = await this.prisma.user.findUnique({
+      where: { email: normalizeEmail(email) },
+    });
+    return row === null ? null : { ...row, role: parseRole(row.role) };
   }
 
-  findById(id: number): User | undefined {
-    return this.users.find((u) => u.id === id);
+  async findById(id: number): Promise<User | null> {
+    const row = await this.prisma.user.findUnique({ where: { id } });
+    return row === null ? null : { ...row, role: parseRole(row.role) };
   }
-  findByIds(ids: number[]): User[] {
-    return this.users.filter((u) => ids.includes(u.id));
+
+  async findByIds(ids: number[]): Promise<User[]> {
+    const rows = await this.prisma.user.findMany({
+      where: { id: { in: ids } },
+    });
+    return rows.map((row) => ({ ...row, role: parseRole(row.role) }));
   }
 }

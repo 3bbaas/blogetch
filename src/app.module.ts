@@ -7,12 +7,14 @@ import { ConfigModule } from '@nestjs/config';
 import { validateEnv } from './config/env.validation';
 import { BlogModule } from './blog/blog.module';
 import { CommentsModule } from './comments/comments.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   controllers: [AppController],
   providers: [AppService],
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
+    PrismaModule,
     UsersModule,
     AuthModule,
     BlogModule,

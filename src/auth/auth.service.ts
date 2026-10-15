@@ -32,11 +32,11 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto): Promise<void> {
-    if (this.usersService.findByEmail(dto.email)) {
+    if (await this.usersService.findByEmail(dto.email)) {
       throw new ConflictException('Email already exists');
     }
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    this.usersService.create({
+    await this.usersService.create({
       name: dto.name,
       email: dto.email,
       passwordHash,
@@ -45,7 +45,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<LoginResponse> {
-    const user = this.usersService.findByEmail(dto.email);
+    const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
     }

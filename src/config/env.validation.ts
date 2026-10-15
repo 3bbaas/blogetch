@@ -9,8 +9,13 @@ export function validateEnv(
   if (typeof jwtSecret !== 'string' || jwtSecret.length === 0) {
     throw new Error('JWT_SECRET environment variable is required');
   }
+  const databaseUrl = config['DATABASE_URL'];
+  if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
+    throw new Error('DATABASE_URL environment variable is required');
+  }
   const result: Record<string, string> = {
     JWT_SECRET: jwtSecret,
+    DATABASE_URL: databaseUrl,
     JWT_EXPIRES_IN: validaString(config['JWT_EXPIRES_IN']) ?? '1d',
     PORT: validaString(config['PORT']) ?? '3000',
   };

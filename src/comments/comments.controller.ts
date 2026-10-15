@@ -25,12 +25,14 @@ export class CommentsController {
     @Param('blogId', ParseIntPipe) blogId: number,
     @Body() dto: CreateCommentDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): CommentResponse {
+  ): Promise<CommentResponse> {
     return this.commentsService.create(dto, blogId, user.id);
   }
   @Public()
   @Get()
-  findByBlog(@Param('blogId', ParseIntPipe) blogId: number): CommentResponse[] {
+  findByBlog(
+    @Param('blogId', ParseIntPipe) blogId: number,
+  ): Promise<CommentResponse[]> {
     return this.commentsService.findByBlog(blogId);
   }
 }

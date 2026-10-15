@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/configure-app';
+import { truncateAll } from './db-helpers';
 
 interface ResponseWithBody {
   body: unknown;
@@ -57,6 +58,8 @@ describe('Auth (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     configureApp(app);
+    // Truncate before init: the admin seed (when enabled) runs on init.
+    await truncateAll(app);
     await app.init();
   });
 
