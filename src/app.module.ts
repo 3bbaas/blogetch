@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { validateEnv } from './config/env.validation';
 import { BlogModule } from './blog/blog.module';
+import { CommentsModule } from './comments/comments.module';
 
 @Module({
   controllers: [AppController],
@@ -15,6 +16,7 @@ import { BlogModule } from './blog/blog.module';
     UsersModule,
     AuthModule,
     BlogModule,
+    CommentsModule,
   ],
 })
 export class AppModule {}
