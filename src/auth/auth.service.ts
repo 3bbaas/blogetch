@@ -40,7 +40,7 @@ export class AuthService {
       name: dto.name,
       email: dto.email,
       passwordHash,
-      role: Role.AUTHOR,
+      role: Role.author,
     });
   }
 

@@ -18,12 +18,12 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { BlogResponse } from './entities/blog.entity';
 import { QueryBlogsDto } from './dto/query-blogs.dto';
-import { BlogService, PaginatedBlogs } from './blog.service';
+import { BlogsService, PaginatedBlogs } from './blogs.service';
 import { UpdateBlogDto } from './dto/update-blog.dto';
 
 @Controller('blogs')
-export class BlogController {
-  constructor(private readonly blogsService: BlogService) {}
+export class BlogsController {
+  constructor(private readonly blogsService: BlogsService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)

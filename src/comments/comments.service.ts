@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BlogService } from '../blog/blog.service';
+import { BlogsService } from '../blogs/blogs.service';
 import { CommentResponse } from './entities/comment.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -12,7 +12,7 @@ type CommentWithAuthor = Prisma.CommentGetPayload<{
 @Injectable()
 export class CommentsService {
   constructor(
-    private readonly blogService: BlogService,
+    private readonly blogsService: BlogsService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -21,8 +21,7 @@ export class CommentsService {
     blogId: number,
     userId: number,
   ): Promise<CommentResponse> {
-    // Throws 404 when the blog does not exist (including after deletion).
-    await this.blogService.findOne(blogId);
+    await this.blogsService.findOne(blogId);
     const comment = await this.prisma.comment.create({
       data: {
         content: dto.content,
@@ -35,9 +34,7 @@ export class CommentsService {
   }
 
   async findByBlog(blogId: number): Promise<CommentResponse[]> {
-    // Throws 404 when the blog does not exist (including after deletion,
-    // since comments cascade away with their blog).
-    await this.blogService.findOne(blogId);
+    await this.blogsService.findOne(blogId);
     const rows = await this.prisma.comment.findMany({
       where: { blogId },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],

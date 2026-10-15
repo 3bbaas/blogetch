@@ -71,7 +71,7 @@ describe('Comments (e2e)', () => {
     process.env['JWT_SECRET'] ??= 'test-secret-that-is-long-enough';
     // Direct assignment (not ??=): the auth suite deletes these vars in the
     // same worker process, and the admin seed is required here.
-    process.env['ADMIN_EMAIL'] = 'admin@inkwell.dev';
+    process.env['ADMIN_EMAIL'] = 'admin@blogetch.dev';
     process.env['ADMIN_PASSWORD'] = 'Admin12345';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -85,7 +85,7 @@ describe('Comments (e2e)', () => {
 
     const adminLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ email: 'admin@inkwell.dev', password: 'Admin12345' })
+      .send({ email: 'admin@blogetch.dev', password: 'Admin12345' })
       .expect(200);
     adminToken = getStringField(adminLogin.body, 'accessToken');
 

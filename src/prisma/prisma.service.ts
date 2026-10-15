@@ -3,10 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
 
-// Exposes Prisma Client through DI, following
-// https://docs.nestjs.com/data/prisma (PostgreSQL + driver adapter variant).
-// Prisma v7 removed the `beforeExit` hook, so connection lifecycle uses
-// Nest hooks instead.
 @Injectable()
 export class PrismaService
   extends PrismaClient

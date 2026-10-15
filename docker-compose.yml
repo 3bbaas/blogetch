@@ -1,18 +1,37 @@
 services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blogetch-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # Inside the Compose network the database host is `db`, not localhost.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-blogetch}:${POSTGRES_PASSWORD:-blogetch}@db:5432/${POSTGRES_DB:-blogetch}?schema=public
+      PORT: '3000'
+    ports:
+      - '${PORT:-3000}:3000'
+    command: sh -c "npx prisma migrate deploy && node dist/main"
+
   db:
     image: postgres:16-alpine
     container_name: blogetch-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: blogetch
-      POSTGRES_PASSWORD: blogetch
-      POSTGRES_DB: blogetch
+      POSTGRES_USER: ${POSTGRES_USER:-blogetch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-blogetch}
+      POSTGRES_DB: ${POSTGRES_DB:-blogetch}
     ports:
       - '5435:5432'
     volumes:
       - blogetch-data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U blogetch -d blogetch']
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER:-blogetch} -d $${POSTGRES_DB:-blogetch}']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -22,18 +41,33 @@ services:
     container_name: blogetch-db-test
     restart: unless-stopped
     environment:
-      POSTGRES_USER: blogetch
-      POSTGRES_PASSWORD: blogetch
-      POSTGRES_DB: blogetch_test
+      POSTGRES_USER: ${POSTGRES_USER:-blogetch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-blogetch}
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-blogetch_test}
     ports:
       - '5434:5432'
     volumes:
       - blogetch-test-data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U blogetch -d blogetch_test']
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER:-blogetch} -d $${POSTGRES_TEST_DB:-blogetch_test}']
       interval: 5s
       timeout: 3s
       retries: 10
+
+  pgweb:
+    image: sosedoff/pgweb:0.17.0
+    container_name: blogetch-pgweb
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Same source as the api service: credentials from POSTGRES_* vars,
+      # host `db` on the Compose network (not localhost).
+      # (PGWEB_DATABASE_URL: plain DATABASE_URL is deprecated by pgweb.)
+      PGWEB_DATABASE_URL: postgresql://${POSTGRES_USER:-blogetch}:${POSTGRES_PASSWORD:-blogetch}@db:5432/${POSTGRES_DB:-blogetch}?sslmode=disable
+    ports:
+      - '8081:8081'
 
 volumes:
   blogetch-data:

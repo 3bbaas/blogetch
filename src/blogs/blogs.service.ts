@@ -14,13 +14,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { Blog, Prisma } from '../generated/prisma/client';
 import { BlogCategory } from './enums/blog-category.enum';
 
-function parseCategory(value: string): BlogCategory {
-  if ((Object.values(BlogCategory) as string[]).includes(value)) {
-    return value as BlogCategory;
-  }
-  throw new Error(`Unknown category in database: ${value}`);
-}
-
 type BlogWithAuthor = Prisma.BlogGetPayload<{
   include: { author: { select: { id: true; name: true } } };
 }>;
@@ -30,8 +23,14 @@ export interface PaginatedBlogs {
   meta: { total: number; page: number; limit: number; totalPages: number };
 }
 
+const RECORD_NOT_FOUND = 'P2025';
+
+function notFound(id: number): NotFoundException {
+  return new NotFoundException(`Blog ${id} not found`);
+}
+
 @Injectable()
-export class BlogService {
+export class BlogsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateBlogDto, authorId: number): Promise<BlogResponse> {
@@ -44,7 +43,7 @@ export class BlogService {
       },
       include: { author: { select: { id: true, name: true } } },
     });
-    return BlogService.toResponse(blog);
+    return BlogsService.toResponse(blog);
   }
 
   async findAll(query: QueryBlogsDto): Promise<PaginatedBlogs> {
@@ -63,7 +62,11 @@ export class BlogService {
       toEndOfDay.setUTCHours(23, 59, 59, 999);
     }
 
-    const term = search?.trim();
+    const term = search?.trim().toLowerCase();
+    const matchingCategories = (Object.values(BlogCategory) as string[]).filter(
+      (value) => term !== undefined && value.toLowerCase().includes(term),
+    );
+
     const where: Prisma.BlogWhereInput = {
       category: category,
       authorId: author,
@@ -76,7 +79,7 @@ export class BlogService {
         : {
             OR: [
               { title: { contains: term, mode: 'insensitive' as const } },
-              { category: { contains: term, mode: 'insensitive' as const } },
+              { category: { in: matchingCategories as BlogCategory[] } },
               {
                 author: {
                   name: { contains: term, mode: 'insensitive' as const },
@@ -86,23 +89,25 @@ export class BlogService {
           }),
     };
 
-    const total = await this.prisma.blog.count({ where });
-    const rows = await this.prisma.blog.findMany({
-      where,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      skip: (page - 1) * limit,
-      take: limit,
-      include: { author: { select: { id: true, name: true } } },
-    });
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.blog.count({ where }),
+      this.prisma.blog.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+        include: { author: { select: { id: true, name: true } } },
+      }),
+    ]);
 
     return {
-      data: rows.map((row) => BlogService.toResponse(row)),
+      data: rows.map((row) => BlogsService.toResponse(row)),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
 
   async findOne(id: number): Promise<BlogResponse> {
-    return BlogService.toResponse(await this.getOrThrow(id));
+    return BlogsService.toResponse(await this.getOrThrow(id));
   }
 
   async update(
@@ -111,26 +116,34 @@ export class BlogService {
     user: AuthenticatedUser,
   ): Promise<BlogResponse> {
     const blog = await this.getOrThrow(id);
-    BlogService.assertCanModify(blog, user);
+    BlogsService.assertCanModify(blog, user);
 
-    const updated = await this.prisma.blog.update({
-      where: { id },
-      data: {
-        title: dto.title,
-        content: dto.content,
-        category: dto.category,
-      },
-      include: { author: { select: { id: true, name: true } } },
-    });
-    return BlogService.toResponse(updated);
+    try {
+      const updated = await this.prisma.blog.update({
+        where: { id },
+        data: {
+          title: dto.title,
+          content: dto.content,
+          category: dto.category,
+        },
+        include: { author: { select: { id: true, name: true } } },
+      });
+      return BlogsService.toResponse(updated);
+    } catch (error) {
+      if (BlogsService.isRecordNotFound(error)) throw notFound(id);
+      throw error;
+    }
   }
 
   async remove(id: number, user: AuthenticatedUser): Promise<void> {
     const blog = await this.getOrThrow(id);
-    BlogService.assertCanModify(blog, user);
-    // Comments cascade at the DB level (onDelete: Cascade); the blog row
-    // itself disappearing is what makes GETs return 404 afterwards.
-    await this.prisma.blog.delete({ where: { id } });
+    BlogsService.assertCanModify(blog, user);
+    try {
+      await this.prisma.blog.delete({ where: { id } });
+    } catch (error) {
+      if (BlogsService.isRecordNotFound(error)) throw notFound(id);
+      throw error;
+    }
   }
 
   private async getOrThrow(id: number): Promise<BlogWithAuthor> {
@@ -138,8 +151,17 @@ export class BlogService {
       where: { id },
       include: { author: { select: { id: true, name: true } } },
     });
-    if (!blog) throw new NotFoundException(`Blog ${id} not found`);
+    if (!blog) throw notFound(id);
     return blog;
+  }
+
+  private static isRecordNotFound(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === RECORD_NOT_FOUND
+    );
   }
 
   private static assertCanModify(
@@ -147,7 +169,7 @@ export class BlogService {
     user: AuthenticatedUser,
   ): void {
     const isOwner = blog.authorId === user.id;
-    const isAdmin = user.role === Role.ADMIN;
+    const isAdmin = user.role === Role.admin;
     if (!isOwner && !isAdmin) {
       throw new ForbiddenException('You can only modify your own posts');
     }
@@ -158,7 +180,7 @@ export class BlogService {
       id: blog.id,
       title: blog.title,
       content: blog.content,
-      category: parseCategory(blog.category),
+      category: blog.category,
       authorId: blog.authorId,
       createdAt: blog.createdAt,
       updatedAt: blog.updatedAt,

@@ -1,5 +1,3 @@
-// Prisma v7 schema. The connection URL lives in prisma7.config.ts
-// (datasource.url), not here. Run `pnpm prisma migrate dev` to apply.
 
 generator client {
   provider = "prisma-client"
@@ -10,46 +8,60 @@ datasource db {
   provider = "postgresql"
 }
 
-// NOTE: role is stored as a plain String holding the app-level Role enum
-// values ('admin' | 'author'). This keeps response shapes byte-identical
-// with the in-memory version without a mapping layer. The CHECK-style
-// guarantee lives in the DTO/service layer (register always assigns
-// Role.AUTHOR; roles come from the signed JWT, never from user input).
+enum Role {
+  admin
+  author
+}
+
+
+enum BlogCategory {
+  Technology
+  Lifestyle
+  Education
+  Business
+  Science
+  Other
+}
+
 model User {
   id           Int       @id @default(autoincrement())
   email        String    @unique
   name         String
-  passwordHash String
-  role         String    @default("author")
-  createdAt    DateTime  @default(now())
+  passwordHash String    @map("password_hash")
+  role         Role      @default(author)
+  createdAt    DateTime  @default(now()) @map("created_at")
   blogs        Blog[]
   comments     Comment[]
+
+  @@map("users")
 }
 
 model Blog {
-  id        Int       @id @default(autoincrement())
+  id        Int          @id @default(autoincrement())
   title     String
-  content   String
-  category  String
-  authorId  Int
-  author    User      @relation(fields: [authorId], references: [id])
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  content   String       @db.Text
+  category  BlogCategory
+  authorId  Int          @map("author_id")
+  author    User         @relation(fields: [authorId], references: [id])
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
   comments  Comment[]
 
   @@index([authorId])
   @@index([category])
   @@index([createdAt])
+  @@map("blogs")
 }
 
 model Comment {
   id        Int      @id @default(autoincrement())
-  content   String
-  blogId    Int
+  content   String   @db.Text
+  blogId    Int      @map("blog_id")
   blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
-  userId    Int
+  userId    Int      @map("user_id")
   user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([blogId])
+  @@map("comments")
 }
