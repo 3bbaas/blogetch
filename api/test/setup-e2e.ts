@@ -1,6 +1,12 @@
 // Loads .env first: this file runs before ConfigModule, so dotenv values
-// would otherwise be invisible here.
-import 'dotenv/config';
+// would otherwise be invisible here. Scripts run with cwd = api/ under
+// `pnpm --filter`, so load the repo-root .env explicitly (cwd fallback kept
+// for direct `pnpm --filter` runs from inside api/).
+import path from 'node:path';
+import { config as loadDotenv } from 'dotenv';
+
+loadDotenv({ path: path.resolve(__dirname, '..', '..', '.env') });
+loadDotenv();
 
 // Runs before e2e spec imports (see test/jest-e2e.json `setupFiles`).
 // AppModule evaluates ConfigModule.forRoot({ validate }) at import time,

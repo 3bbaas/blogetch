@@ -1,89 +1,86 @@
-# Blogetch — NestJS Blog API
+# Blogetch — "Sketch your thoughts. Print them proud."
 
-Blog platform API built with NestJS + TypeScript, PostgreSQL, and Prisma.
-Global route prefix: `/api`.
+A nostalgic, old-school printed-gazette blog platform: NestJS API + Next.js frontend,
+PostgreSQL + Prisma, one pnpm workspace, Docker Compose for everything.
+
+```
+blogetch/
+├── api/                  # NestJS REST API (routes under /api)
+├── web/                  # Next.js frontend
+├── docker-compose.yml    # db, db-test, api, web, pgweb
+├── .github/workflows/    # CI (Phase G)
+├── .env / .env.example   # compose-level variables
+├── api/.env.example      # API variables
+└── web/.env.example      # web variables
+```
 
 > **Route note:** the blog resource lives at **`/api/blogs`** (plural `blogs`,
-> not `posts`). Comments nest under blogs: `/api/blogs/:blogId/comments`.
+> not `posts`).
 >
 > **PUT semantics:** `PUT /api/blogs/:id` is a **partial update** — only the
-> fields present in the body change (`title`/`content`/`category` via `??`
-> fallback / Prisma `undefined`-skips); `authorId` in the body is always
-> ignored (taken from the JWT instead).
+> fields present in the body change; `authorId` in the body is always ignored
+> (taken from the JWT instead).
 
 ## Requirements
 
-- Node.js 24 + pnpm 10
-- Docker + Docker Compose v2 (for PostgreSQL; host ports `5435` for dev DB
-  and `5434` for the test DB — `5432`/`5433` are used by other projects on
-  this machine)
+- Node.js 24 (`cat .nvmrc`), pnpm 10 (`packageManager` field)
+- Docker + Docker Compose v2 for PostgreSQL
+  (host ports: `5435` dev DB, `5434` test DB — `5432`/`5433` belong to other
+  projects on this machine; API `3000`, web `3001`, pgweb `8081`)
 
 ## Environment variables
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `PORT` | no | `3000` | API listen port |
-| `JWT_SECRET` | **yes** | – | JWT signing secret (app fails fast without it) |
-| `JWT_EXPIRES_IN` | no | `1d` | Token lifetime (`ms` format, e.g. `15m`, `7d`) |
-| `ADMIN_EMAIL` | no | – | Seeded admin email (`admin@blogetch.dev`); seed skipped if unset |
-| `ADMIN_PASSWORD` | no | – | Seeded admin password (`Admin12345`); seed skipped if unset |
-| `POSTGRES_USER` | no | `blogetch` | Postgres user (Compose) |
-| `POSTGRES_PASSWORD` | no | `blogetch` | Postgres password (Compose) |
-| `POSTGRES_DB` | no | `blogetch` | Dev database name (Compose) |
-| `POSTGRES_TEST_DB` | no | `blogetch_test` | Test database name (Compose) |
-| `DATABASE_URL` | **yes** | – | Prisma connection string (dev DB) |
-| `TEST_DATABASE_URL` | **yes (e2e)** | – | Prisma connection string (isolated test DB) |
+Root `.env` (used by Compose; see `.env.example`). App-level examples in
+`api/.env.example` and `web/.env.example`.
 
-Copy `.env.example` to `.env` and fill in secrets. `.env` is gitignored and
-never committed. `DATABASE_URL` inside the Compose `api` service points at host
-`db`, not `localhost`.
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` / `WEB_PORT` | `3000` / `3001` | Host ports for api / web |
+| `JWT_SECRET` | – (required) | JWT signing secret; app fails fast without it |
+| `JWT_EXPIRES_IN` | `1d` | Token lifetime |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | `admin@blogetch.dev` / `Admin12345` | Seeded admin (seed skipped if unset) |
+| `CORS_ORIGINS` | `http://localhost:3001` | Comma-separated allowed origins for the API |
+| `POSTGRES_USER/PASSWORD/DB` | `blogetch` | Dev database credentials (Compose) |
+| `POSTGRES_TEST_DB` | `blogetch_test` | Test database name (Compose) |
+| `DATABASE_URL` / `TEST_DATABASE_URL` | – | Dev / isolated test connection strings |
+| `API_URL` / `NEXT_PUBLIC_SITE_URL` / `COOKIE_SECURE` | – | Web runtime config (see `web/.env.example`) |
 
-## Local setup
+## Local dev
 
 ```bash
-docker compose up -d db        # start PostgreSQL (dev DB)
 pnpm install
-pnpm prisma:deploy             # apply migrations (or prisma:migrate in dev)
-pnpm prisma:seed               # admin + sample authors/blogs/comments (idempotent)
-pnpm run start:dev             # API at http://localhost:3000, routes under /api
+docker compose up -d db db-test
+pnpm --filter blogetch-api prisma:deploy
+pnpm --filter blogetch-api prisma:seed   # admin + samples (idempotent)
+pnpm dev                                  # api :3000 + web :3001
 ```
 
-Useful Prisma scripts: `prisma:generate`, `prisma:migrate`, `prisma:deploy`,
+Prisma scripts (api): `prisma:generate`, `prisma:migrate`, `prisma:deploy`,
 `prisma:seed`, `prisma:studio`.
 
-## Running everything with Docker Compose
+## Full-stack Docker run
 
 ```bash
-docker compose up --build -d  # db + db-test + api (api runs migrate deploy first)
-curl http://localhost:3000/api/blogs
-docker compose down -v        # full reset (volumes removed)
+docker compose up --build -d   # api runs `prisma migrate deploy` at startup
+curl localhost:3000/api/health
+curl localhost:3001/
+docker compose down -v         # full reset (volumes removed)
 ```
 
-### Postgres GUI (pgweb)
+Postgres GUI: http://localhost:8081 (pgweb, dev DB preconnected).
 
-`docker compose up -d pgweb`, then open http://localhost:8081. It connects to
-the dev database automatically (`db` service, credentials from `POSTGRES_*`).
-To inspect the test database instead, point pgweb at host `db-test`, port
-`5432`, database from `POSTGRES_TEST_DB`.
-
-Data persists across `api` restarts via the `blogetch-data` named volume
-(unlike the old in-memory version).
-
-## Running tests
+## Tests
 
 ```bash
-npm test          # unit tests (src)
-npm run test:e2e  # e2e (app + auth + blogs + comments) against the isolated
-                  # test DB via TEST_DATABASE_URL; suites truncate tables and
-                  # re-seed the admin, and run serially (--runInBand)
-npm run build && npx tsc --noEmit && npm run lint
+pnpm test        # api unit tests
+pnpm test:e2e    # api e2e (isolated test DB, truncates + reseeds admin, serial)
+pnpm lint && pnpm typecheck && pnpm build
 ```
 
 ## Auth quick reference
 
-- `POST /api/auth/register` → 201 (role is always `author`; `role` in body is stripped)
+- `POST /api/auth/register` → 201 (role always `author`; `role` in body stripped)
 - `POST /api/auth/login` → 200 `{ accessToken, user }`
-- `GET /api/auth/me` → 200 with `Bearer` token, 401 without
-- Blogs: POST/PUT/DELETE require auth; both GETs are public. Only the owner or
-  an `admin` may edit/delete a blog (403 otherwise). Validation failures return
-  **422** with a field-level `errors` object.
+- `GET /api/auth/me` → 200 with `Bearer` token, 401 without; `GET /api/health` → 200 public
+- Blogs: POST/PUT/DELETE need auth; both GETs public. Owner or `admin` may edit/delete
+  (403 otherwise). Validation failures → **422** with field-level `errors`.

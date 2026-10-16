@@ -1,8 +1,10 @@
 services:
   api:
     build:
-      context: .
+      context: ./api
       dockerfile: Dockerfile
+      additional_contexts:
+        - workspace=./
     container_name: blogetch-api
     restart: unless-stopped
     depends_on:
@@ -17,6 +19,12 @@ services:
     ports:
       - '${PORT:-3000}:3000'
     command: sh -c "npx prisma migrate deploy && node dist/main"
+    healthcheck:
+      test: ['CMD-SHELL', "node -e \"fetch('http://localhost:3000/api/health').then((r) => { if (!r.ok) process.exit(1) })\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   db:
     image: postgres:16-alpine
@@ -68,6 +76,24 @@ services:
       PGWEB_DATABASE_URL: postgresql://${POSTGRES_USER:-blogetch}:${POSTGRES_PASSWORD:-blogetch}@db:5432/${POSTGRES_DB:-blogetch}?sslmode=disable
     ports:
       - '8081:8081'
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      additional_contexts:
+        - workspace=./
+    container_name: blogetch-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_URL: http://api:3000/api
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3001}
+      COOKIE_SECURE: 'false'
+    ports:
+      - '${WEB_PORT:-3001}:3000'
 
 volumes:
   blogetch-data:

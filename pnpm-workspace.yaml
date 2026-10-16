@@ -1,0 +1,10 @@
+packages:
+  - api
+  - web
+
+# Allowlist for dependency postinstall scripts (pnpm blocks them by default).
+onlyBuiltDependencies:
+  - bcrypt
+  - esbuild
+  - prisma
+  - '@prisma/engines'
