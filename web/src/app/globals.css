@@ -1,0 +1,333 @@
+@import 'tailwindcss';
+
+/* Day Edition (default) */
+:root {
+  color-scheme: light;
+  --paper: #f4ecd8;
+  --paper-2: #e9ddbf;
+  --ink: #1e1a16;
+  --ink-soft: #5a4a38;
+  /* Tuned darker than the classic mustard so text on paper passes WCAG AA. */
+  --accent: #8b2e2a;
+  --accent-2: #7c5a0e;
+  --rule: rgb(30 26 22 / 0.8);
+}
+
+/* Night Edition: explicit override wins over the media query below. */
+:root[data-theme='night'] {
+  color-scheme: dark;
+  --paper: #1b1712;
+  --paper-2: #26201a;
+  --ink: #eadfc8;
+  --ink-soft: #b9a98c;
+  --accent: #d0746b;
+  --accent-2: #d9a441;
+  --rule: rgb(234 223 200 / 0.6);
+}
+
+/* No cookie yet: follow the OS, with zero JS and zero flash. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --paper: #1b1712;
+    --paper-2: #26201a;
+    --ink: #eadfc8;
+    --ink-soft: #b9a98c;
+    --accent: #d0746b;
+    --accent-2: #d9a441;
+    --rule: rgb(234 223 200 / 0.6);
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-rule: var(--rule);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-accent: var(--font-accent);
+  --font-arabic: var(--font-arabic);
+}
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body), Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+/* Paper grain: inline SVG turbulence, low opacity, pointer-transparent. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+}
+
+/* Soft vignette. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 51;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 62%, rgb(0 0 0 / 0.1) 100%);
+}
+
+/* Double rule: thick + thin, the gazette divider. */
+.rule-double {
+  border-top: 3px solid var(--rule);
+  position: relative;
+}
+.rule-double::after {
+  content: '';
+  display: block;
+  border-top: 1px solid var(--rule);
+  margin-top: 2px;
+}
+
+/* Dotted leaders for tables of contents. */
+.dot-leaders {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.dot-leaders::after {
+  content: '';
+  flex: 1;
+  border-bottom: 2px dotted var(--ink-soft);
+  transform: translateY(-4px);
+}
+
+/* Drop cap for article openers. */
+.drop-cap::first-letter {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 800;
+  font-size: 3.4em;
+  line-height: 0.85;
+  float: left;
+  padding-right: 0.12em;
+  padding-top: 0.05em;
+  color: var(--accent);
+}
+
+/* Rubber-stamp category badge. Rotation set inline per category. */
+.stamp {
+  display: inline-block;
+  font-family: var(--font-accent), 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--accent);
+  border: 2px solid var(--accent);
+  border-radius: 2px;
+  padding: 0.15rem 0.55rem;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='r'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.9 0'/%3E%3CfeComposite operator='in' in2='SourceGraphic'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23r)'/%3E%3C/svg%3E");
+  mask-size: 120px;
+}
+
+/* Letterpress key button. */
+.key-btn {
+  font-family: var(--font-accent), 'Courier New', monospace;
+  border: 2px solid var(--ink);
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+.key-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.key-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.key-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+.key-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* Ruled-paper inputs. */
+.ruled-input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid var(--ink-soft);
+  border-radius: 0;
+  padding: 0.5rem 0.15rem;
+  font-family: var(--font-accent), 'Courier New', monospace;
+  color: var(--ink);
+}
+.ruled-input::placeholder {
+  color: var(--ink-soft);
+  opacity: 0.75;
+}
+.ruled-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Native dropdown options + date-picker popups follow the gazette paper.
+   (macOS renders <option> mostly natively; color-scheme covers the rest.) */
+.ruled-input option {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-accent), 'Courier New', monospace;
+}
+select.ruled-input {
+  appearance: auto;
+}
+input[type='date'].ruled-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.75;
+}
+:root[data-theme='night'] input[type='date'].ruled-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) input[type='date'].ruled-input::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+  }
+}
+
+/* Halftone dots for placeholders and hovers. */
+.halftone {
+  background-image: radial-gradient(var(--ink-soft) 1px, transparent 1.4px);
+  background-size: 9px 9px;
+}
+
+/* Typewriter loader. */
+.type-caret::after {
+  content: '▌';
+  animation: caret-blink 1s steps(1) infinite;
+  color: var(--accent);
+}
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Telegram-strip toast. */
+.telegram {
+  border-top: 2px dashed var(--ink-soft);
+  border-bottom: 2px dashed var(--ink-soft);
+  background: var(--paper-2);
+}
+
+/* Skeleton shimmer (also disabled under reduced motion below). */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper-2);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgb(128 128 128 / 0.18) 50%, transparent 70%);
+  animation: skeleton-slide 1.4s ease infinite;
+}
+@keyframes skeleton-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Page-load ink settle. */
+.ink-settle {
+  animation: ink-settle 200ms ease-out;
+}
+@keyframes ink-settle {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Visible focus everywhere. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Markdown editor (uiw): retype the toolbar and panes in gazette tokens. */
+.md-editor-gazette .w-md-editor {
+  background-color: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink-soft);
+  border-radius: 2px;
+  box-shadow: none;
+  font-family: var(--font-body), Georgia, serif;
+}
+.md-editor-gazette .w-md-editor-toolbar {
+  background-color: var(--paper-2);
+  border-bottom: 2px solid var(--ink-soft);
+}
+.md-editor-gazette .w-md-editor-toolbar button {
+  color: var(--ink-soft);
+}
+.md-editor-gazette .w-md-editor-toolbar button:hover {
+  color: var(--accent);
+}
+.md-editor-gazette .w-md-editor-text-input,
+.md-editor-gazette .w-md-editor-text-input textarea {
+  color: var(--ink) !important;
+  background-color: var(--paper) !important;
+  font-family: var(--font-accent), 'Courier New', monospace !important;
+}
+/* The visible glyphs are CodeMirror divs, not the hidden textarea above:
+   force gazette ink on paper in both themes, plus caret and selection. */
+.md-editor-gazette .cm-content,
+.md-editor-gazette .cm-line,
+.md-editor-gazette .cm-gutters {
+  color: var(--ink) !important;
+  background-color: var(--paper) !important;
+}
+.md-editor-gazette .cm-content {
+  caret-color: var(--accent) !important;
+}
+.md-editor-gazette .cm-selectionBackground,
+.md-editor-gazette .cm-line::selection {
+  background-color: var(--paper-2) !important;
+}
+.md-editor-gazette .wmde-markdown {
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

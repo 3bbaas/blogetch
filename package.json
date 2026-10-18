@@ -1,0 +1,21 @@
+{
+  "name": "blogetch",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --filter blogetch-api --filter blogetch-web --parallel dev",
+    "dev:api": "pnpm --filter blogetch-api start:dev",
+    "dev:web": "pnpm --filter blogetch-web dev",
+    "build": "pnpm --filter blogetch-api --filter blogetch-web build",
+    "lint": "pnpm --filter blogetch-api --filter blogetch-web lint",
+    "typecheck": "pnpm --filter blogetch-api exec tsc --noEmit -p tsconfig.json && pnpm --filter blogetch-web typecheck",
+    "test": "pnpm --filter blogetch-api test",
+    "test:e2e": "pnpm --filter blogetch-api test:e2e",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down"
+  }
+}

@@ -1,0 +1,101 @@
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      network: host
+      additional_contexts:
+        - workspace=./
+    container_name: blogetch-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-blogetch}:${POSTGRES_PASSWORD:-blogetch}@db:5432/${POSTGRES_DB:-blogetch}?schema=public
+      PORT: '3000'
+    ports:
+      - '${PORT:-3000}:3000'
+    command: sh -c "npx prisma migrate deploy && node dist/main"
+    healthcheck:
+      test: ['CMD-SHELL', "node -e \"fetch('http://localhost:3000/api/health').then((r) => { if (!r.ok) process.exit(1) })\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  db:
+    image: postgres:16-alpine
+    container_name: blogetch-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-blogetch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-blogetch}
+      POSTGRES_DB: ${POSTGRES_DB:-blogetch}
+    ports:
+      - '5435:5432'
+    volumes:
+      - blogetch-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER:-blogetch} -d $${POSTGRES_DB:-blogetch}']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  db-test:
+    image: postgres:16-alpine
+    container_name: blogetch-db-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-blogetch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-blogetch}
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-blogetch_test}
+    ports:
+      - '5434:5432'
+    volumes:
+      - blogetch-test-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER:-blogetch} -d $${POSTGRES_TEST_DB:-blogetch_test}']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  pgweb:
+    image: sosedoff/pgweb:0.17.0
+    container_name: blogetch-pgweb
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGWEB_DATABASE_URL: postgresql://${POSTGRES_USER:-blogetch}:${POSTGRES_PASSWORD:-blogetch}@db:5432/${POSTGRES_DB:-blogetch}?sslmode=disable
+    ports:
+      - '8081:8081'
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      network: host
+      additional_contexts:
+        - workspace=./
+      args:
+        API_URL: http://api:3000/api
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3001}
+    container_name: blogetch-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_URL: http://api:3000/api
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3001}
+      COOKIE_SECURE: 'false'
+    ports:
+      - '${WEB_PORT:-3001}:3000'
+
+volumes:
+  blogetch-data:
+  blogetch-test-data:

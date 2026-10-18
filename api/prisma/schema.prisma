@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  admin
+  author
+}
+
+
+enum BlogCategory {
+  Technology
+  Lifestyle
+  Education
+  Business
+  Science
+  Other
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  name         String
+  passwordHash String    @map("password_hash")
+  role         Role      @default(author)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  blogs        Blog[]
+  comments     Comment[]
+
+  @@map("users")
+}
+
+model Blog {
+  id        Int          @id @default(autoincrement())
+  title     String
+  content   String       @db.Text
+  category  BlogCategory
+  authorId  Int          @map("author_id")
+  author    User         @relation(fields: [authorId], references: [id])
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  comments  Comment[]
+
+  @@index([authorId])
+  @@index([category])
+  @@index([createdAt])
+  @@map("blogs")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  blogId    Int      @map("blog_id")
+  blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([blogId])
+  @@map("comments")
+}
