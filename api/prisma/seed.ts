@@ -1,8 +1,14 @@
+import path from 'node:path';
+import { config as loadDotenv } from 'dotenv';
 
-import 'dotenv/config';
+loadDotenv({ path: path.resolve(__dirname, '..', '..', '.env') });
+loadDotenv();
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, type BlogCategory } from '../src/generated/prisma/client';
+import {
+  type BlogCategory,
+  PrismaClient,
+} from '../src/generated/prisma/client';
 
 function requiredEnv(name: string, fallback?: string): string {
   const value = process.env[name] ?? fallback;

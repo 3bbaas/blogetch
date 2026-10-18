@@ -83,6 +83,9 @@ services:
       dockerfile: Dockerfile
       additional_contexts:
         - workspace=./
+      args:
+        API_URL: http://api:3000/api
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3001}
     container_name: blogetch-web
     restart: unless-stopped
     depends_on:

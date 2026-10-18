@@ -4,6 +4,12 @@
 # ---------- build stage ----------
 FROM node:24-slim AS build
 RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
+# OpenSSL must exist before `pnpm install` so the @prisma/engines postinstall
+# fetches the engine binary matching this libc/openssl (otherwise Prisma
+# tries to download it at runtime, as a non-root user, and fails).
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends openssl && \
+    rm -rf /var/lib/apt/lists
 COPY --from=workspace package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
 COPY --from=workspace api/package.json /app/api/
 COPY --from=workspace web/package.json /app/web/
@@ -25,6 +31,11 @@ FROM node:24-slim AS runtime
 ENV NODE_ENV=production
 WORKDIR /app/api
 
+# Prisma's engine needs OpenSSL at runtime (it warns and misdetects
+# otherwise, failing connections with P1001). node:24-slim has none.
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends openssl && \
+    rm -rf /var/lib/apt/lists
 RUN groupadd -r app && useradd -r -g app app
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/api/node_modules ./node_modules
