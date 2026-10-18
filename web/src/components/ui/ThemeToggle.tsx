@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Theme } from '@/lib/theme';
 
 function writeTheme(next: Theme): void {
@@ -10,11 +11,13 @@ function writeTheme(next: Theme): void {
 
 export default function ThemeToggle({ initial }: { initial: Theme }) {
   const [theme, setTheme] = useState<Theme>(initial);
+  const router = useRouter();
 
   function toggle(): void {
     const next: Theme = theme === 'day' ? 'night' : 'day';
     setTheme(next);
     writeTheme(next);
+    router.refresh();
   }
 
   return (

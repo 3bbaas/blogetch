@@ -75,6 +75,7 @@ export default async function RootLayout({
             </div>
             <ThemeToggle initial={theme} />
           </div>
+          <div className="rule-double mt-3" aria-hidden="true" />
           <div className="mt-3">
             <Nav userName={user?.name ?? null} />
           </div>

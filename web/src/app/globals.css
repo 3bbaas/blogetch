@@ -298,23 +298,20 @@ input[type='date'].ruled-input::-webkit-calendar-picker-indicator {
 }
 .md-editor-gazette .w-md-editor-text-input,
 .md-editor-gazette .w-md-editor-text-input textarea {
-  color: var(--ink) !important;
-  background-color: var(--paper) !important;
+  background-color: transparent !important;
   font-family: var(--font-accent), 'Courier New', monospace !important;
 }
-/* The visible glyphs are CodeMirror divs, not the hidden textarea above:
-   force gazette ink on paper in both themes, plus caret and selection. */
-.md-editor-gazette .cm-content,
-.md-editor-gazette .cm-line,
-.md-editor-gazette .cm-gutters {
+/* The visible glyphs live in the highlight <pre> under the transparent
+   textarea overlay: force gazette ink on paper in both themes. */
+.md-editor-gazette .w-md-editor-text-pre,
+.md-editor-gazette .w-md-editor-text-pre > code {
   color: var(--ink) !important;
-  background-color: var(--paper) !important;
+  background-color: transparent !important;
 }
-.md-editor-gazette .cm-content {
+.md-editor-gazette .w-md-editor-text-input {
   caret-color: var(--accent) !important;
 }
-.md-editor-gazette .cm-selectionBackground,
-.md-editor-gazette .cm-line::selection {
+.md-editor-gazette .w-md-editor-text-input::selection {
   background-color: var(--paper-2) !important;
 }
 .md-editor-gazette .wmde-markdown {

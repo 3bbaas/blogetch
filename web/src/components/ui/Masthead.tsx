@@ -34,7 +34,6 @@ export default function Masthead({ now = new Date() }: { now?: Date }) {
           Vol. I · No. {dayOfYear(now)} · {longDate(now)} · Price: one thought
         </time>
       </p>
-      <div className="rule-double mt-3" aria-hidden="true" />
     </header>
   );
 }
